@@ -1,3 +1,4 @@
+#include "../include/client.hpp"
 #include "../include/kvstore.hpp"
 #include "../include/vv.hpp"
 
