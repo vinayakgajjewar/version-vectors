@@ -35,6 +35,19 @@ namespace vv {
         return merged;
     }
 
+    /*
+     * Get the version vector that covers the given set of versions.
+     */
+    version_vec merge(const std::vector<version_vec> &vecs) {
+        version_vec merged;
+        for (const auto &vec: vecs) {
+            for (const auto &[id, clock]: vec) {
+                merged[id] = std::max(merged[id], clock);
+            }
+        }
+        return merged;
+    }
+
     auto descends(const version_vec &a, const version_vec &b) {
         std::unordered_set<std::string> ids;
         for (const auto &[id, clock]: a) {

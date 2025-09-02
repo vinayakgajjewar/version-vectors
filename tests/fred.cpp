@@ -2,24 +2,28 @@
 #include "../include/vv.hpp"
 
 int main() {
-    vv::version_vec va;
-    vv::version_vec vb;
 
-    vv::tick(vb, "b");
+    kvstore::node a{"a", {}};
+    kvstore::node b{"b", {}};
+    kvstore::sibling_vals vals;
 
-    vv::tick(va, "a");
-    vv::tick(va, "a");
-    vv::tick(va, "a");
+    kvstore::put(b, "key", "red", {});
 
-    if (vv::descends(va, vb)) {
-        std::cout << "va descends vb" << std::endl;
-    } else {
-        std::cout << "va does not descend vb" << std::endl;
+    vals = kvstore::get(b, "key", {});
+    for (const auto &val: vals) {
+        std::cout << val.first << std::endl;
+        vv::print(val.second);
     }
 
-    if (vv::descends(vb, va)) {
-        std::cout << "vb descends va" << std::endl;
-    } else {
-        std::cout << "vb does not descend va" << std::endl;
+    kvstore::put(a, "key", "blue", {{"a", 0}});
+    kvstore::put(a, "key", "blue", {{"a", 1}});
+    kvstore::put(a, "key", "blue", {{"a", 2}});
+
+    vals = kvstore::get(a, "key", {});
+    for (const auto &val: vals) {
+        std::cout << val.first << std::endl;
+        vv::print(val.second);
     }
+
+
 }
