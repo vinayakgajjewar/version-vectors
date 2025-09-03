@@ -1,6 +1,7 @@
 #ifndef KVSTORE_HPP
 #define KVSTORE_HPP
 
+#include <iostream>
 #include <string>
 
 #include "vv.hpp"
