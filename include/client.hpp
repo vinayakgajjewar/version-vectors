@@ -8,7 +8,8 @@ typedef struct {
 } client_cache;
 
 void put(client_cache &cache, kvstore::node &node, const std::string &k, const std::string &v) {
-    kvstore::put(node, k, v, cache.cache[k]);
+    auto vv = kvstore::put(node, k, v, cache.cache[k]);
+    cache.cache[k] = vv;
 }
 
 /*

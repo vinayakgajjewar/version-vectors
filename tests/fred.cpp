@@ -1,30 +1,20 @@
 #include "../include/client.hpp"
-#include "../include/kvstore.hpp"
-#include "../include/vv.hpp"
 
 int main() {
 
-    kvstore::node a{"a", {}};
-    kvstore::node b{"b", {}};
-    kvstore::sibling_vals vals;
+    kvstore::node a;
+    a.id = "a";
 
-    kvstore::put(b, "key", "red", {});
+    kvstore::node b;
+    b.id = "b";
 
-    vals = kvstore::get(b, "key", {});
-    for (const auto &val: vals) {
-        std::cout << val.first << std::endl;
-        vv::print(val.second);
-    }
+    client_cache c1, c2;
 
-    kvstore::put(a, "key", "blue", {{"a", 0}});
-    kvstore::put(a, "key", "blue", {{"a", 1}});
-    kvstore::put(a, "key", "blue", {{"a", 2}});
+    put(c1, b, "k", "red");
 
-    vals = kvstore::get(a, "key", {});
-    for (const auto &val: vals) {
-        std::cout << val.first << std::endl;
-        vv::print(val.second);
-    }
+    put(c2, a, "k", "blue");
+    put(c2, a, "k", "blue");
+    put(c2, a, "k", "blue");
 
-
+    kvstore::sync_key(a, b, "k");
 }
