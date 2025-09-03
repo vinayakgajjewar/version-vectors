@@ -20,6 +20,7 @@ auto get(client_cache &cache, kvstore::node &node, const std::string &k) {
     auto siblings = kvstore::get(node, k, cache.cache[k]);
 
     std::vector<vv::version_vec> versions;
+    versions.reserve(siblings.size());
     for (const auto &sibling: siblings) {
         versions.push_back(sibling.second);
     }

@@ -7,20 +7,7 @@
 
 namespace kvstore {
 
-    /*
-     * TODO
-     * Maybe these could be named better.
-     *
-     * TODO
-     * Maybe these should be typedefs
-     */
     using versioned_val = std::pair<std::string, vv::version_vec>;
-
-    /*
-     * TODO
-     * Maybe this type definition isn't necessary?
-     */
-    using sibling_vals = std::vector<versioned_val>;
 
     /*
      * Each node has an identifier and a mapping from keys to a set of
@@ -28,7 +15,7 @@ namespace kvstore {
      */
     typedef struct {
         std::string id;
-        std::unordered_map<std::string, sibling_vals> store;
+        std::unordered_map<std::string, std::vector<versioned_val>> store;
     } node;
 
     auto put(node &n, const std::string &k, const std::string &v, const vv::version_vec &ctx) {
@@ -48,63 +35,77 @@ namespace kvstore {
         /*
          * We need to keep siblings that are concurrent or newer.
          */
-        sibling_vals new_siblings = {};
+        std::vector<versioned_val> new_siblings = {};
         for (const auto &sibling: n.store[k]) {
             if (!vv::descends(new_vv, sibling.second)) {
                 new_siblings.emplace_back(sibling);
             }
         }
-        new_siblings.emplace_back(std::make_pair(v, new_vv));
+        new_siblings.emplace_back(v, new_vv);
         n.store[k] = new_siblings;
         return new_vv;
     }
 
-    /*
-     * TODO
-     * Only return values that aren't stale with respect to the provided
-     * context.
-     */
-    sibling_vals get(const node &n, const std::string &k, const vv::version_vec &ctx) {
+    std::vector<versioned_val> get(const node &n, const std::string &k, const vv::version_vec &ctx) {
         std::cout << "Getting key " << k << " from node " << n.id << std::endl;
-        return n.store.at(k);
+        if (n.store.find(k) == n.store.end()) {
+            std::cout << "Key " << k << " not found on node " << n.id << std::endl;
+            return {};
+        }
+        auto siblings = n.store.at(k);
+        if (siblings.empty()) {
+            std::cout << "Key " << k << " stores no values on node " << n.id << std::endl;
+            return {};
+        }
+        std::vector<versioned_val> not_stale;
+        for (const auto &sibling: siblings) {
+            if (!vv::descends(ctx, sibling.second)) {
+                not_stale.push_back(sibling);
+            }
+        }
+        return not_stale;
     }
 
-    /*
-     * TODO
-     *
-     * I'm just syncing a key at a time for ease of implementation. When we
-     * sync, we probably want to sync all the keys at once.
-     */
-    void sync_key(node &n1, node &n2, const std::string &k) {
-        std::cout << "Syncing key " << k << " between " << n1.id << " and " << n2.id << std::endl;
-        std::vector<versioned_val> all;
-        auto n1_sibs = n1.store[k];
-        auto n2_sibs = n2.store[k];
-        all.insert(all.end(), n1_sibs.begin(), n1_sibs.end());
-        all.insert(all.end(), n2_sibs.begin(), n2_sibs.end());
+    void sync(node &n1, node &n2) {
+        std::cout << "Syncing " << n1.id << " and " << n2.id << std::endl;
+        std::unordered_set<std::string> keys;
+        for (const auto &[key, _]: n1.store) {
+            keys.insert(key);
+        }
+        for (const auto &[key, _]: n2.store) {
+            keys.insert(key);
+        }
+        for (const auto &k: keys) {
+            std::cout << "Syncing key " << k << " between " << n1.id << " and " << n2.id << std::endl;
+            std::vector<versioned_val> all;
+            auto n1_sibs = n1.store[k];
+            auto n2_sibs = n2.store[k];
+            all.insert(all.end(), n1_sibs.begin(), n1_sibs.end());
+            all.insert(all.end(), n2_sibs.begin(), n2_sibs.end());
 
-        std::vector<versioned_val> concurrent;
-        for (const auto &val: all) {
-            auto descended = false;
-            for (const auto &comp: all) {
-                if (vv::descends(comp.second, val.second)) {
-                    descended = true;
-                    break;
+            std::vector<versioned_val> concurrent;
+            for (const auto &val: all) {
+                auto descended = false;
+                for (const auto &comp: all) {
+                    if (vv::descends(comp.second, val.second)) {
+                        descended = true;
+                        break;
+                    }
+                }
+                if (!descended) {
+                    concurrent.push_back(val);
                 }
             }
-            if (!descended) {
-                concurrent.push_back(val);
+
+            std::cout << "Concurrent siblings for " << k << ":" << std::endl;
+            for (const auto &val: concurrent) {
+                std::cout << val.first << ": ";
+                vv::print(val.second);
             }
-        }
 
-        std::cout << "Concurrent siblings for " << k << ":" << std::endl;
-        for (const auto &val: concurrent) {
-            std::cout << val.first << ": ";
-            vv::print(val.second);
+            n1.store[k] = concurrent;
+            n2.store[k] = concurrent;
         }
-
-        n1.store[k] = concurrent;
-        n2.store[k] = concurrent;
     }
 }
 
