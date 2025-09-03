@@ -16,7 +16,7 @@ void put(client_cache &cache, kvstore::node &node, const std::string &k, const s
  * I think when we do a GET, the client should merge all the received versions
  * and cache that.
  */
-void get(client_cache &cache, kvstore::node &node, const std::string &k) {
+auto get(client_cache &cache, kvstore::node &node, const std::string &k) {
     auto siblings = kvstore::get(node, k, cache.cache[k]);
 
     std::vector<vv::version_vec> versions;
@@ -25,6 +25,8 @@ void get(client_cache &cache, kvstore::node &node, const std::string &k) {
     }
     auto merged = vv::merge(versions);
     cache.cache[k] = merged;
+
+    return siblings;
 }
 
 #endif

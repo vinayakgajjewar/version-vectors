@@ -17,4 +17,15 @@ int main() {
     put(c2, a, "k", "blue");
 
     kvstore::sync_key(a, b, "k");
+
+    auto vals = get(c1, a, "k");
+    std::cout << "Results for key k:" << std::endl;
+    for (const auto &val: vals) {
+        std::cout << val.first << ": ";
+        vv::print(val.second);
+    }
+
+    put(c1, a, "k", "green");
+
+    kvstore::sync_key(a, b, "k");
 }
